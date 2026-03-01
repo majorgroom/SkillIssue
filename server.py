@@ -7,21 +7,23 @@ app = FastAPI()
 DISCORD_WEBHOOK = os.getenv("DISCORD_WEBHOOK")
 API_SECRET = os.getenv("MY_API_SECRET")
 
-@app.get("/")
-def home():
-    return {"status": "API running"}
-
 @app.post("/send")
 async def send_message(data: dict, authorization: str = Header(None)):
-
     if authorization != f"Bearer {API_SECRET}":
         raise HTTPException(status_code=401, detail="Unauthorized")
 
     message = data.get("message")
-
     if not message:
         raise HTTPException(status_code=400, detail="No message provided")
 
-    requests.post(DISCORD_WEBHOOK, json={"content": message})
+    print("Message to send:", message)
+    try:
+        response = requests.post(DISCORD_WEBHOOK, json={"content": message})
+        print("Discord status:", response.status_code)
+        print("Discord response:", response.text)
+        response.raise_for_status()
+    except Exception as e:
+        print("Error sending to Discord:", e)
+        raise HTTPException(status_code=500, detail="Failed to send to Discord")
 
     return {"status": "sent"}
